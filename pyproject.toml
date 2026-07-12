@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "alphaframer"
+version = "0.0.1"
+description = "A spatial-context perception protocol — the eye that never keeps a frame."
+requires-python = ">=3.10"
+dependencies = ["numpy"]
+
+[tool.setuptools.packages.find]
+include = ["alphaframer*"]
