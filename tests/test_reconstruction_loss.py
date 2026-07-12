@@ -36,9 +36,29 @@ def test_capacity_names_dropped_attributes():
 def test_cycle_audit_pipe_is_lossless_on_topology():
     r = cycle_audit()
     assert r["set_f1"] == 1.0 and r["relation"] == 1.0 and r["position"] >= 0.99
-    assert "size" in r["capacity"]["preserved"]              # the lesson we taught
-    assert r["next_lessons"] == ["hue"]                      # the lesson still owed
+    # the flywheel has taught the current sensor's scalar curriculum (size + hue)…
+    assert "size" in r["capacity"]["preserved"] and "hue" in r["capacity"]["preserved"]
+    # …and honestly names the next gap, gated on richer vision (pose/segmentation)
+    assert r["next_lessons"] == ["orientation"]
     assert "deterministic" in r["decoder"]                   # generative decoders barred
+
+
+def test_recorded_hue_replays_true_not_label_hash(tmp_path):
+    sm._LEDGER = tmp_path / "spatial.jsonl"
+    sm.record_snapshot([{"label": "물병", "x": 0.3, "y": 0.5, "hue": 210.0},   # a blue bottle
+                        {"label": "컵", "x": 0.6, "y": 0.5}], place="책상")     # no colour mined
+    scene = sm.reconstruct_scene(sm.recall_snapshot())
+    bottle = next(o for o in scene["objects"] if o["label"] == "물병")
+    cup = next(o for o in scene["objects"] if o["label"] == "컵")
+    assert bottle["hue"] == 210.0                            # replays the RECORDED colour
+    assert cup["hue"] != 210.0                               # falls back to the label hue, honestly
+
+
+def test_grey_crop_hue_is_not_fabricated(tmp_path):
+    sm._LEDGER = tmp_path / "spatial.jsonl"
+    sm.record_snapshot([{"label": "컵", "x": 0.5, "y": 0.5, "hue": -1}])       # frontend: grey → -1
+    o = sm.recall_snapshot()["objects"][0]
+    assert "hue" not in o                                    # a negative hue is dropped, never stored
 
 
 def test_snapshot_carries_size_and_scales_rebuild(tmp_path):

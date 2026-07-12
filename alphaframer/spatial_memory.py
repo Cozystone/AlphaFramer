@@ -57,6 +57,11 @@ def record_snapshot(objects: list[dict[str, Any]], *, place: str | None = None,
         # laptop and cup rebuild the same size. Optional; absent stays absent (no fabricated size).
         if o.get("size") is not None:
             entry["size"] = max(0.0, min(1.0, float(o.get("size", 0.0))))
+        # hue (dominant colour 0..360) — the NEXT audit lesson: a red bottle should replay red, not
+        # a label-hashed colour. A negative hue means the crop was essentially grey (no confident
+        # colour) → stays absent, so the replay falls back to the label hue rather than fabricating one.
+        if o.get("hue") is not None and float(o.get("hue")) >= 0:
+            entry["hue"] = round(float(o.get("hue")) % 360, 1)
         clean.append(entry)
     snap = {"id": f"snap_{int(time.time() * 1000)}", "at": round(time.time(), 2),
             "place": (place or "").strip()[:60] or None, "objects": clean,
@@ -144,7 +149,9 @@ def reconstruct_scene(snapshot: dict[str, Any] | None, *, duration: float = 6.0)
         entry: dict[str, Any] = {
             "id": oid, "label": o["label"], "archetype": _archetype({"label": o["label"]}),
             "pos": pos, "scale": round(0.8 - 0.25 * o.get("depth", 0.5), 3),   # nearer = bigger
-            "hue": _hue(o["label"]), "role": "memory",
+            # a RECORDED colour replays true; without one, the label hue is an honest fallback
+            "hue": round(float(o["hue"]), 1) if o.get("hue") is not None else _hue(o["label"]),
+            "role": "memory",
             "shape": _shape_spec({"label": o["label"]}),   # replayed rooms get silhouettes too
         }
         if o.get("size") is not None:                       # recorded size scales the rebuilt object

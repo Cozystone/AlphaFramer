@@ -21,7 +21,10 @@ from __future__ import annotations
 from typing import Any
 
 _EPS = 0.04                 # deadzone for order comparisons — sub-noise differences don't count
-_ATTRS = ("size", "hue")    # richer truth attributes the audit checks the schema against
+# richer truth attributes the audit checks the schema against, in curriculum order. size+hue are
+# mineable from the current sensor (bbox + crop); orientation needs pose/segmentation vision, so it
+# stays an HONEST next lesson (named, not faked) until that sensor lands.
+_ATTRS = ("size", "hue", "orientation")
 
 
 def _match(truth: list[dict[str, Any]], probe: list[dict[str, Any]]
@@ -118,10 +121,10 @@ def _invert_scene(scene: dict[str, Any]) -> list[dict[str, Any]]:
 # a synthetic room whose truth WE define — so the audit needs no camera and lies about nothing.
 # It carries size+hue on purpose: the capacity probe shows which of them the pipeline can hold.
 _FIXTURE: list[dict[str, Any]] = [
-    {"label": "물병", "x": 0.25, "y": 0.62, "depth": 0.28, "size": 0.06, "hue": 200.0},
-    {"label": "노트북", "x": 0.62, "y": 0.55, "depth": 0.35, "size": 0.18, "hue": 30.0},
-    {"label": "컵", "x": 0.48, "y": 0.70, "depth": 0.22, "size": 0.03, "hue": 10.0},
-    {"label": "화분", "x": 0.82, "y": 0.40, "depth": 0.66, "size": 0.10, "hue": 120.0},
+    {"label": "물병", "x": 0.25, "y": 0.62, "depth": 0.28, "size": 0.06, "hue": 200.0, "orientation": 0.0},
+    {"label": "노트북", "x": 0.62, "y": 0.55, "depth": 0.35, "size": 0.18, "hue": 30.0, "orientation": 90.0},
+    {"label": "컵", "x": 0.48, "y": 0.70, "depth": 0.22, "size": 0.03, "hue": 10.0, "orientation": 0.0},
+    {"label": "화분", "x": 0.82, "y": 0.40, "depth": 0.66, "size": 0.10, "hue": 120.0, "orientation": 45.0},
 ]
 
 
@@ -136,7 +139,8 @@ def cycle_audit(truth: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     # only) — a pure in-memory snapshot, so audits never pollute the real spatial ledger
     context = {"id": "audit", "place": "감사", "objects": [
         {"label": t["label"], "x": t["x"], "y": t["y"], "depth": t.get("depth", 0.5),
-         **({"size": t["size"]} if "size" in t else {})} for t in truth]}
+         **({"size": t["size"]} if "size" in t else {}),
+         **({"hue": t["hue"]} if "hue" in t else {})} for t in truth]}
     scene = reconstruct_scene(context)
     probe = _invert_scene(scene)
     score = topology_score(truth, probe)
