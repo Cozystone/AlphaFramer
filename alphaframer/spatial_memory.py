@@ -35,9 +35,11 @@ def _load() -> list[dict[str, Any]]:
         return []
 
 
-def record_snapshot(objects: list[dict[str, Any]], *, place: str | None = None) -> dict[str, Any]:
+def record_snapshot(objects: list[dict[str, Any]], *, place: str | None = None,
+                    lat: float | None = None, lon: float | None = None) -> dict[str, Any]:
     """Record ONE spatial memory: the objects seen and WHERE (distilled geometry only, no frame).
-    objects: [{"label", "x"(0..1), "y"(0..1), optional "depth"(0..1), optional "signature":[...]}]."""
+    objects: [{"label", "x"(0..1), "y"(0..1), optional "depth"(0..1), optional "signature":[...]}].
+    Optional lat/lon joins the macro-geo layer: the snapshot binds to the nearest anchored place."""
     clean: list[dict[str, Any]] = []
     for o in objects or []:
         label = str(o.get("label") or "").strip()
@@ -59,6 +61,11 @@ def record_snapshot(objects: list[dict[str, Any]], *, place: str | None = None) 
     snap = {"id": f"snap_{int(time.time() * 1000)}", "at": round(time.time(), 2),
             "place": (place or "").strip()[:60] or None, "objects": clean,
             "frames_stored": 0, "left_device": False}
+    if lat is not None and lon is not None:
+        snap["lat"], snap["lon"] = round(float(lat), 6), round(float(lon), 6)
+        from alphaframer.geo_anchor import bind_snapshot
+
+        snap = bind_snapshot(snap)                    # nearest anchored place names a nameless room
     if not clean:
         return {**snap, "recorded": False}
     try:

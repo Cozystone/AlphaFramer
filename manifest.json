@@ -1,15 +1,17 @@
 {
-  "synced_at": "2026-07-12T16:36:06",
-  "content_sha": "6ae05dcdcdbf",
+  "synced_at": "2026-07-12T16:56:06",
+  "content_sha": "479ea8aaea31",
   "files": [
     "alphaframer/object_recognition.py",
     "alphaframer/face_cortex.py",
     "alphaframer/spatial_memory.py",
     "alphaframer/reconstruction_loss.py",
+    "alphaframer/geo_anchor.py",
     "alphaframer/geometry.py",
     "tests/test_object_recognition.py",
     "tests/test_spatial_memory.py",
-    "tests/test_reconstruction_loss.py"
+    "tests/test_reconstruction_loss.py",
+    "tests/test_geo_anchor.py"
   ],
   "gate": "clean",
   "contract": "no-frame perception protocol; ATANOR reasoning core is NOT included"
